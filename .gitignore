@@ -1,0 +1,20 @@
+# Virtual environments
+.venv/
+venv/
+testenv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# YOLO models
+*.pt
+
+# Database
+*.db
+
+# Environment variables
+.env
+
+# IDE
+.vscode/

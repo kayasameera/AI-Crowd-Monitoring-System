@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Crowd Monitoring System</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f4f6f8;
+        color: #18212f;
+    }
+
+    header {
+        background: linear-gradient(135deg, #111827, #263a70);
+        color: white;
+        padding: 22px 28px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 30px;
+    }
+
+    header p {
+        margin: 6px 0 0;
+        opacity: 0.85;
+    }
+
+    .container {
+        width: 94%;
+        max-width: 1500px;
+        margin: 22px auto 50px;
+    }
+
+    .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .metric {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        min-height: 120px;
+    }
+
+    .metric .label {
+        font-size: 14px;
+        font-weight: bold;
+        color: #667085;
+        margin-bottom: 12px;
+    }
+
+    .metric .value {
+        font-size: 34px;
+        font-weight: 800;
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 22px 0 12px;
+    }
+
+    .camera-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .camera-card {
+        background: white;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.09);
+    }
+
+    .camera-title {
+        font-size: 18px;
+        font-weight: 800;
+        margin: 4px 0 12px;
+    }
+
+    .feed {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: contain;
+        background: #101827;
+        border-radius: 10px;
+        display: block;
+    }
+
+    .camera-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .mini {
+        background: #f7f8fa;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .mini span {
+        display: block;
+        color: #667085;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .mini strong {
+        font-size: 20px;
+    }
+
+    .status {
+        margin-top: 12px;
+        font-weight: 800;
+        padding: 9px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .normal {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .alert {
+        background: #fee2e2;
+        color: #b91c1c;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        50% { opacity: 0.55; }
+    }
+
+    .heatmaps {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+    }
+
+    .heat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.09);
+    }
+
+    .heat-card img {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: contain;
+        background: #101827;
+        border-radius: 10px;
+    }
+
+    .tables {
+        margin-top: 22px;
+        background: white;
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #eaecf0;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #475467;
+    }
+
+    .footer {
+        text-align: center;
+        color: #667085;
+        margin-top: 28px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1000px) {
+        .metrics {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .camera-grid,
+        .heatmaps {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .metrics {
+            grid-template-columns: 1fr;
+        }
+
+        header h1 {
+            font-size: 23px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>AI Crowd Monitoring System</h1>
+    <p>Real-Time Crowd Detection, Tracking, Density Analysis, Heatmaps & Alerts</p>
+</header>
+
+<div class="container">
+
+    <!-- TOTAL METRICS -->
+    <div class="metrics">
+
+        <div class="metric">
+            <div class="label">👥 PEOPLE IN FRAME</div>
+            <div class="value" id="people">0</div>
+        </div>
+
+        <div class="metric">
+            <div class="label">🚪 TOTAL ENTRY</div>
+            <div class="value" id="entry">0</div>
+        </div>
+
+        <div class="metric">
+            <div class="label">🚶 TOTAL EXIT</div>
+            <div class="value" id="exit">0</div>
+        </div>
+
+        <div class="metric">
+            <div class="label">🏢 OCCUPANCY</div>
+            <div class="value" id="occupancy">0</div>
+        </div>
+
+    </div>
+
+    <div class="metric" style="margin-bottom:20px;">
+        <div class="label">📊 CROWD DENSITY</div>
+        <div class="value" id="density">LOW</div>
+        <div id="systemStatus" class="status normal">SYSTEM STATUS: NORMAL</div>
+    </div>
+
+
+    <!-- BOTH CAMERAS -->
+    <div class="section-title">📹 Live Camera Feeds + YOLO Bounding Boxes + Heatmaps</div>
+
+    <div class="camera-grid">
+
+        <!-- LAPTOP -->
+        <div class="camera-card">
+            <div class="camera-title">💻 Laptop Camera</div>
+
+            <img
+                id="laptopFeed"
+                class="feed"
+                src="/video_feed/0"
+                alt="Laptop camera feed"
+            >
+
+            <div class="camera-metrics">
+                <div class="mini">
+                    <span>People</span>
+                    <strong id="c0People">0</strong>
+                </div>
+
+                <div class="mini">
+                    <span>Entry</span>
+                    <strong id="c0Entry">0</strong>
+                </div>
+
+                <div class="mini">
+                    <span>Exit</span>
+                    <strong id="c0Exit">0</strong>
+                </div>
+            </div>
+
+            <div class="status normal" id="c0Status">
+                LAPTOP: CONNECTING...
+            </div>
+        </div>
+
+
+        <!-- MOBILE -->
+        <div class="camera-card">
+            <div class="camera-title">📱 Mobile Camera</div>
+
+            <img
+                id="mobileFeed"
+                class="feed"
+                src="/video_feed/1"
+                alt="Mobile camera feed"
+            >
+
+            <div class="camera-metrics">
+                <div class="mini">
+                    <span>People</span>
+                    <strong id="c1People">0</strong>
+                </div>
+
+                <div class="mini">
+                    <span>Entry</span>
+                    <strong id="c1Entry">0</strong>
+                </div>
+
+                <div class="mini">
+                    <span>Exit</span>
+                    <strong id="c1Exit">0</strong>
+                </div>
+            </div>
+
+            <div class="status normal" id="c1Status">
+                MOBILE: CONNECTING...
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- HEATMAPS -->
+    <div class="section-title">🔥 Crowd Heatmaps</div>
+
+    <div class="heatmaps">
+
+        <div class="heat-card">
+            <div class="camera-title">💻 Laptop Camera Heatmap</div>
+
+            <img
+                src="/heatmap/0"
+                alt="Laptop crowd heatmap"
+            >
+        </div>
+
+        <div class="heat-card">
+            <div class="camera-title">📱 Mobile Camera Heatmap</div>
+
+            <img
+                src="/heatmap/1"
+                alt="Mobile crowd heatmap"
+            >
+        </div>
+
+    </div>
+
+
+    <!-- DATABASE DATA -->
+    <div class="tables">
+        <div class="section-title" style="margin-top:0;">
+            🗄️ Recent Crowd Activity
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Camera</th>
+                    <th>People</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>Occupancy</th>
+                    <th>Density</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="activityBody">
+                <tr>
+                    <td colspan="8">Waiting for data...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        AI Crowd Monitoring System • YOLO11 + OpenCV + Flask + SQLite
+    </div>
+
+</div>
+
+
+<script>
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
+function updateCamera(index, cam) {
+    setText(`c${index}People`, cam.people);
+    setText(`c${index}Entry`, cam.entry);
+    setText(`c${index}Exit`, cam.exit);
+
+    const status = document.getElementById(`c${index}Status`);
+
+    if (!status) return;
+
+    if (!cam.connected) {
+        status.className = "status alert";
+        status.textContent = `${cam.name}: DISCONNECTED`;
+    } else if (cam.status === "ALERT") {
+        status.className = "status alert";
+        status.textContent = `${cam.name}: HIGH CROWD`;
+    } else {
+        status.className = "status normal";
+        status.textContent = `${cam.name}: NORMAL`;
+    }
+}
+
+function updateTable(rows) {
+    const body = document.getElementById("activityBody");
+
+    if (!rows || rows.length === 0) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="8">No database records yet.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    body.innerHTML = rows.map(row => `
+        <tr>
+            <td>${row.timestamp ?? ""}</td>
+            <td>${row.camera ?? "LAPTOP"}</td>
+            <td>${row.people_in_frame ?? 0}</td>
+            <td>${row.entry_count ?? 0}</td>
+            <td>${row.exit_count ?? 0}</td>
+            <td>${row.occupancy ?? 0}</td>
+            <td>${row.density ?? "LOW"}</td>
+            <td>${row.alert_status ?? "NORMAL"}</td>
+        </tr>
+    `).join("");
+}
+
+async function refreshDashboard() {
+    try {
+        const response = await fetch("/api/crowd", {
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        setText("people", data.people);
+        setText("entry", data.entry);
+        setText("exit", data.exit);
+        setText("occupancy", data.occupancy);
+        setText("density", data.density);
+
+        const systemStatus = document.getElementById("systemStatus");
+
+        if (data.status === "ALERT") {
+            systemStatus.className = "status alert";
+            systemStatus.textContent = "🚨 SYSTEM STATUS: HIGH CROWD";
+        } else {
+            systemStatus.className = "status normal";
+            systemStatus.textContent = "✅ SYSTEM STATUS: NORMAL";
+        }
+
+        if (data.cameras && data.cameras.length >= 2) {
+            updateCamera(0, data.cameras[0]);
+            updateCamera(1, data.cameras[1]);
+        }
+
+        updateTable(data.recent);
+
+    } catch (error) {
+        console.error("Dashboard update failed:", error);
+    }
+}
+
+refreshDashboard();
+setInterval(refreshDashboard, 1000);
+
+
+// If a stream temporarily disconnects, force the browser to reconnect.
+function reconnectImage(id, url) {
+    const img = document.getElementById(id);
+
+    img.onerror = function() {
+        setTimeout(() => {
+            img.src = url + "?t=" + Date.now();
+        }, 2000);
+    };
+}
+
+reconnectImage("laptopFeed", "/video_feed/0");
+reconnectImage("mobileFeed", "/video_feed/1");
+</script>
+
+</body>
+</html>
